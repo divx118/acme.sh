@@ -106,23 +106,6 @@ synology_srm_deploy() {
   response=$(_get "$_base_url/webapi/entry.cgi?api=SYNO.Core.Certificate&method=list&version=1")
   _debug3 response "$response"
   
-  # Commented below. TODO remove if we don't need it.
-  #id=$(echo "$response" | sed -n "s/.*\"desc\":\"$SYNO_Certificate\",\"id\":\"\([^\"]*\).*/\1/p")
-  #_debug2 id "$id"
-
-  #if [ -z "$id" ] && [ -z "${SYNO_Create:-}" ]; then
-  #  _err "Unable to find certificate: $SYNO_Certificate and \$SYNO_Create is not set"
-  #  return 1
-  #fi
-
-  ## we've verified this certificate description is a thing, so save it
-  #_savedeployconf SYNO_Certificate "$SYNO_Certificate"
-
-  #default=false
-  #if echo "$response" | sed -n "s/.*\"desc\":\"$SYNO_Certificate\",\([^{]*\).*/\1/p" | grep -- 'is_default":true' >/dev/null; then
-  #  default=true
-  #fi
-  #_debug2 default "$default"
   
   _info "Generate form POST request"
   nl="\0015\0012"
@@ -132,10 +115,6 @@ synology_srm_deploy() {
   content="$content${nl}--$delim${nl}Content-Disposition: form-data; name=\"cert\"; filename=\"$(basename "$_ccert")\"${nl}Content-Type: application/octet-stream${nl}${nl}$(cat "$_ccert")\0012"
   # Comentated out intermediate certificate, because it will only aspect a certificate signing request .csr file. 
   #content="$content${nl}--$delim${nl}Content-Disposition: form-data; name=\"inter_cert\"; filename=\"$(basename "$_cca")\"${nl}Content-Type: application/octet-stream${nl}${nl}$(cat "$_cca")\0012"
-  # I think we only need the certificate files so commented out below.
-  #content="$content${nl}--$delim${nl}Content-Disposition: form-data; name=\"id\"${nl}${nl}$id"
-  #content="$content${nl}--$delim${nl}Content-Disposition: form-data; name=\"desc\"${nl}${nl}${SYNO_Certificate}"
-  #content="$content${nl}--$delim${nl}Content-Disposition: form-data; name=\"as_default\"${nl}${nl}${default}"
   content="$content${nl}--$delim--${nl}"
   content="$(printf "%b_" "$content")"
   content="${content%_}" # protect trailing \n

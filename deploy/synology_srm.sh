@@ -30,7 +30,8 @@ synology_srm_deploy() {
 
   _cdomain="$1"
   _ckey="$2"
-  _ccert="$3"
+#Since intermediate doesn't work we will use fullchain for our certificate
+  _ccert="$5"
   _cca="$4"
 
   _debug _cdomain "$_cdomain"
@@ -127,6 +128,7 @@ synology_srm_deploy() {
   nl="\0015\0012"
   delim="--------------------------$(_utc_date | tr -d -- '-: ')"
   content="--$delim${nl}Content-Disposition: form-data; name=\"key\"; filename=\"$(basename "$_ckey")\"${nl}Content-Type: application/octet-stream${nl}${nl}$(cat "$_ckey")\0012"
+  # Note fullchain is used for the certificate
   content="$content${nl}--$delim${nl}Content-Disposition: form-data; name=\"cert\"; filename=\"$(basename "$_ccert")\"${nl}Content-Type: application/octet-stream${nl}${nl}$(cat "$_ccert")\0012"
   # Comentated out intermediate certificate, because it will only aspect a certificate signing request .csr file. 
   #content="$content${nl}--$delim${nl}Content-Disposition: form-data; name=\"inter_cert\"; filename=\"$(basename "$_cca")\"${nl}Content-Type: application/octet-stream${nl}${nl}$(cat "$_cca")\0012"
@@ -137,7 +139,7 @@ synology_srm_deploy() {
   content="$content${nl}--$delim--${nl}"
   content="$(printf "%b_" "$content")"
   content="${content%_}" # protect trailing \n
-  echo -e $content
+
   _info "Upload certificate to the Synology DSM"
 
   response=$(_post "$content" "$_base_url/webapi/entry.cgi?api=SYNO.Core.Certificate&method=import&version=1&SynoToken=$token" "" "POST" "multipart/form-data; boundary=${delim}")

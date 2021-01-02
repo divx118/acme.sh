@@ -57,7 +57,7 @@ synology_srm_deploy() {
   # defaulting to localhost and http because it's localhost...
   [ -n "${SYNO_Scheme}" ] || SYNO_Scheme="http"
   [ -n "${SYNO_Hostname}" ] || SYNO_Hostname="localhost"
-  [ -n "${SYNO_Port}" ] || SYNO_Port="5000"
+  [ -n "${SYNO_Port}" ] || SYNO_Port="8000"
 
   _savedeployconf SYNO_Scheme "$SYNO_Scheme"
   _savedeployconf SYNO_Hostname "$SYNO_Hostname"
@@ -119,7 +119,7 @@ synology_srm_deploy() {
   content="$(printf "%b_" "$content")"
   content="${content%_}" # protect trailing \n
 
-  _info "Upload certificate to the Synology DSM"
+  _info "Upload certificate to the Synology SRM"
 
   response=$(_post "$content" "$_base_url/webapi/entry.cgi?api=SYNO.Core.Certificate&method=import&version=1&SynoToken=$token" "" "POST" "multipart/form-data; boundary=${delim}")
 

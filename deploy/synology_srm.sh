@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-# Here is a script to deploy cert to Synology DSM
+# Here is a script to deploy cert to Synology SRM routers
 #
 # it requires the jq and curl are in the $PATH and the following
 # environment variables must be set:
@@ -14,7 +14,7 @@
 #
 # SYNO_Scheme - defaults to http
 # SYNO_Hostname - defaults to localhost
-# SYNO_Port - defaults to 5000
+# SYNO_Port - defaults to 8000
 # SYNO_DID - device ID to skip OTP - defaults to empty
 #
 #returns 0 means success, otherwise error.
@@ -30,8 +30,7 @@ synology_srm_deploy() {
 
   _cdomain="$1"
   _ckey="$2"
-#Since intermediate doesn't work we will use fullchain for our certificate
-  _ccert="$5"
+  _ccert="$3"
   _cca="$4"
 
   _debug _cdomain "$_cdomain"
@@ -101,20 +100,14 @@ synology_srm_deploy() {
   _savedeployconf SYNO_Username "$SYNO_Username"
   _savedeployconf SYNO_Password "$SYNO_Password"
   _savedeployconf SYNO_DID "$SYNO_DID"
-
-  _info "Getting certificates in Synology SRM"
-  response=$(_get "$_base_url/webapi/entry.cgi?api=SYNO.Core.Certificate&method=list&version=1")
-  _debug3 response "$response"
-  
-  
+    
   _info "Generate form POST request"
   nl="\0015\0012"
   delim="--------------------------$(_utc_date | tr -d -- '-: ')"
   content="--$delim${nl}Content-Disposition: form-data; name=\"key\"; filename=\"$(basename "$_ckey")\"${nl}Content-Type: application/octet-stream${nl}${nl}$(cat "$_ckey")\0012"
-  # Note fullchain is used for the certificate
   content="$content${nl}--$delim${nl}Content-Disposition: form-data; name=\"cert\"; filename=\"$(basename "$_ccert")\"${nl}Content-Type: application/octet-stream${nl}${nl}$(cat "$_ccert")\0012"
-  # Comentated out intermediate certificate, because it will only aspect a certificate signing request .csr file. 
-  #content="$content${nl}--$delim${nl}Content-Disposition: form-data; name=\"inter_cert\"; filename=\"$(basename "$_cca")\"${nl}Content-Type: application/octet-stream${nl}${nl}$(cat "$_cca")\0012"
+  # Remove first blank line from intermediate certificate (grep "\S"). 
+  content="$content${nl}--$delim${nl}Content-Disposition: form-data; name=\"inter_cert\"; filename=\"$(basename "$_cca")\"${nl}Content-Type: application/octet-stream${nl}${nl}$(cat "$_cca" | grep "\S")\0012"
   content="$content${nl}--$delim--${nl}"
   content="$(printf "%b_" "$content")"
   content="${content%_}" # protect trailing \n
